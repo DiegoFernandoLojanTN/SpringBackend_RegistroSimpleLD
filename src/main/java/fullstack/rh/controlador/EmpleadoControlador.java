@@ -1,14 +1,17 @@
 package fullstack.rh.controlador;
 
+import fullstack.rh.excepcion.RecursoNoEncontradoExcepcion;
 import fullstack.rh.modelo.Empleado;
-import fullstack.rh.servicio.EmpleadoServicio;
 import fullstack.rh.servicio.IEmpleadoServicio;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("rh-app") //http://localhost:8080/rh-app/empleados/1
@@ -32,6 +35,38 @@ public class EmpleadoControlador {
     public Empleado agregarEmpleado(@RequestBody Empleado empleado){
         logger.info("Empleado a agregar: "+ empleado);
         return empleadoServicio.guardarEmpleado(empleado);
+    }
+
+    @GetMapping("/empleados/{id}")
+    public ResponseEntity<Empleado> obtenerEmpleadoPorId(@PathVariable Integer id){
+        Empleado empleado = empleadoServicio.buscarEmpleadoPorId(id);
+        if (empleado == null)
+            throw new RecursoNoEncontradoExcepcion("No se encontro el empleado con id: "+id);
+        return ResponseEntity.ok(empleado);
+    }
+
+    @PutMapping("/empleados/{id}")
+    public ResponseEntity<Empleado> actualizarEmpleado(@PathVariable Integer id, @RequestBody Empleado empleadoRecibido){
+        Empleado empleado = empleadoServicio.buscarEmpleadoPorId(id);
+        if (empleado == null)
+            throw new RecursoNoEncontradoExcepcion("El id recibido no existe: "+id);
+        empleado.setNombre(empleadoRecibido.getNombre());
+        empleado.setDepartamento(empleadoRecibido.getDepartamento());
+        empleado.setSueldo(empleadoRecibido.getSueldo());
+        empleadoServicio.guardarEmpleado(empleado);
+        return ResponseEntity.ok(empleado);
+    }
+
+    @DeleteMapping("/empleados/{id}")
+    public ResponseEntity<Map<String, Boolean>> eliminarEmpleado(@PathVariable Integer id){
+        Empleado empleado = empleadoServicio.buscarEmpleadoPorId(id);
+        if (empleado == null)
+            throw new RecursoNoEncontradoExcepcion("El id recibido no existe: "+id);
+        empleadoServicio.eliminarEmpleado(empleado);
+        //la respuesta tipo json {"eliminado": "true"}
+        Map<String, Boolean> respuesta = new HashMap<>();
+        respuesta.put("eliminado", Boolean.TRUE);
+        return ResponseEntity.ok(respuesta);
     }
 
 }
